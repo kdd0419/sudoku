@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<Windows.h>
+#include<string.h>
 #include"sudoku.h"
 
 int findPossibleNum(int(*sudoku)[LENGTH], int x, int y, int *check);
@@ -13,7 +14,7 @@ int solve(int(*sudoku)[LENGTH], int x, int y);
 
 typedef enum { NOCURSOR, SOLIDCURSOR, NORMALCURSOR } CURSOR_TYPE;
 
-void setcursortype(CURSOR_TYPE c) { //커서숨기는 함수 
+void setcursortype(CURSOR_TYPE c) { //커서숨기는 함수
 	CONSOLE_CURSOR_INFO CurInfo;
 
 	switch (c) {
@@ -58,6 +59,7 @@ int main()
 	}
 	setcursortype(NOCURSOR);
 
+    textColor(1);
 	printBoard(sudoku);
 	solve(sudoku, 0, 0);
 	gotoxy(0, LENGTH + LENGTH_BOX+1);
@@ -75,16 +77,16 @@ int findPossibleNum(int(*sudoku)[LENGTH], int x, int y, int *check)
 
 	for (i = 0; i<LENGTH; i++)
 	{
-		if (sudoku[x][i] != 0) check[sudoku[x][i] - 1] = 1;
+		if (sudoku[x][i] != 0 && i != y) check[sudoku[x][i] - 1] = 1;
 
-		if (sudoku[i][y] != 0) check[sudoku[i][y] - 1] = 1;
+		if (sudoku[i][y] != 0 && i != x) check[sudoku[i][y] - 1] = 1;
 	}
 
 	for (i = (x / LENGTH_BOX) * LENGTH_BOX; i - ((x / LENGTH_BOX)*LENGTH_BOX) < LENGTH_BOX; i++)
 	{
 		for (j = (y / LENGTH_BOX) * LENGTH_BOX; j - ((y / LENGTH_BOX)*LENGTH_BOX) < LENGTH_BOX; j++)
 		{
-			if (sudoku[i][j] == 0) continue;
+			if (sudoku[i][j] == 0 || i == x || j == y) continue;
 
 			check[sudoku[i][j] - 1] = 1;
 		}
@@ -100,8 +102,12 @@ int findPossibleNum(int(*sudoku)[LENGTH], int x, int y, int *check)
 void writeBoard(int(*sudoku)[LENGTH])
 {
 	int i, j;
-
-	FILE *output = fopen("answer-c.txt", "w");
+	char numStr[12];
+	sprintf(numStr, "%d", solveNum);
+    char path[]="answers\\answer-";
+    strcat(path, numStr);
+    strcat(path, ".txt");
+	FILE *output = fopen(path, "w");
 
 	for (i = 0; i<LENGTH; i++)
 	{
@@ -181,11 +187,15 @@ int solve(int(*sudoku)[LENGTH], int x, int y)
 		check[i] = 0;
 	if (sudoku[x][y] > 0)
 	{
+	    findPossibleNum(sudoku, x, y, check);
+	    if(check[sudoku[x][y]-1] == 0){
+            return 0;
+	    }
 		free(check);
 		if (x == LENGTH - 1 && y == LENGTH - 1) {
 			solveNum++;
 			writeBoard(sudoku);
-			
+
 			gotoxy(0, 1 + LENGTH + LENGTH_BOX);
 			system("pause");
 			gotoxy(0, 1 + LENGTH + LENGTH_BOX);
@@ -219,7 +229,7 @@ int solve(int(*sudoku)[LENGTH], int x, int y)
 
 		sudoku[x][y] = i + 1;
 		possibleSum--;
-		
+
 		if(LENGTH<10)gotoxy(y + 1 + y / LENGTH_BOX, 1 + x + x / LENGTH_BOX);
 		else gotoxy(1 +3* y + y / LENGTH_BOX, 1 + x + x / LENGTH_BOX);
 		textColor(0);
@@ -227,10 +237,10 @@ int solve(int(*sudoku)[LENGTH], int x, int y)
 		else printf("%02d", i + 1);
 		textColor(1);
 		if (x == LENGTH - 1 && y == LENGTH - 1 ) {
+			solveNum++;
 			writeBoard(sudoku);
 			free(check);
-			solveNum++;
-			
+
 			gotoxy(0, 1 + LENGTH + LENGTH_BOX);
 			system("pause");
 			gotoxy(0, 1 + LENGTH + LENGTH_BOX);
